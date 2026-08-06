@@ -43,7 +43,7 @@ with tab3:
     Consulta la equivalencia entre la formulación matemática y su implementación directa en **Python con Gurobi**.
     """)
 
-    # --- DESPLEGABLE: FORMULARIO SINTÁCTICO DE GUROBI ---
+    # --- DESPLEGABLE 1: FORMULARIO SINTÁCTICO DE GUROBI ---
     with st.expander("📖 **Ver Formulario Sintáctico Completo (Variables, Objetivos, Big-M e Indicadoras)**", expanded=True):
         st.markdown("### 1. Declaración de Variables y Dominios")
         st.markdown("""
@@ -88,7 +88,7 @@ with tab3:
         | **Implicación con Igualdad** | $y = 1 \\implies \\sum_{j} a_j x_j = b$ | `model.addGenConstrIndicator(y, True, gp.quicksum(a[j]*x[j] for j in J) == b)` |
         """)
 
-    # --- DESPLEGABLE: ERRORES TÍPICOS DE MODELAMIENTO ---
+    # --- DESPLEGABLE 2: ERRORES TÍPICOS DE MODELAMIENTO Y DIAGNÓSTICO EN GUROBI ---
     with st.expander("⚠️ **Errores Típicos de Modelamiento y Diagnóstico en Gurobi**", expanded=False):
         st.markdown("""
         Al formular un modelo en Gurobi, los errores más comunes no siempre lanzan un fallo en Python, sino que resultan en un **modelo mal planteado** (soluciones absurdas o infactibles). A continuación se resumen los diagnósticos clave:
@@ -148,9 +148,10 @@ if model.status == GRB.INFEASIBLE:
     st.markdown("---")
     st.subheader("🚀 Ejemplos Código Ejecutable")
 
-    tab_ej1, tab_ej2 = st.tabs([
+    tab_ej1, tab_ej2, tab_ej3 = st.tabs([
         "1. Estructura General", 
-        "2. Aplicación Big-M / Indicadoras",
+        "2. Aplicación Big-M", 
+        "3. Restricciones Indicadoras"
     ])
 
     with tab_ej1:
@@ -184,7 +185,7 @@ model.optimize()
 import gurobipy as gp
 from gurobipy import GRB
 
-model = gp.Model("Ejemplo_BigM_E_Indicadoras")
+model = gp.Model("Ejemplo_BigM")
 M = 1000
 I = [1, 2, 3]
 c, f = {1: 10, 2: 15, 3: 20}, {1: 100, 2: 150, 3: 120}
@@ -198,5 +199,25 @@ model.setObjective(gp.quicksum(c[i] * x[i] + f[i] * y[i] for i in I), GRB.MINIMI
 # Relación Big-M: x_i <= M * y_i
 model.addConstrs((x[i] <= M * y[i] for i in I), name="BigM_CostoFijo")
 
+model.optimize()
+        """, language="python")
+
+    with tab_ej3:
+        st.code("""
+import gurobipy as gp
+from gurobipy import GRB
+
+model = gp.Model("Ejemplo_Indicadoras")
+J = [1, 2, 3]
+a = {1: 2.5, 2: 1.0, 3: 4.0}
+b = 25.0
+
+x = model.addVars(J, lb=0, vtype=GRB.CONTINUOUS, name="x")
+y = model.addVar(vtype=GRB.BINARY, name="y")
+
+# Restricción Indicadora: Si y = 1 => sum(a_j * x_j) <= b
+model.addGenConstrIndicator(y, True, gp.quicksum(a[j] * x[j] for j in J) <= b, name="Si_Y_Es_1")
+
+model.setObjective(gp.quicksum(x[j] for j in J), GRB.MAXIMIZE)
 model.optimize()
         """, language="python")
