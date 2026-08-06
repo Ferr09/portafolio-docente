@@ -91,72 +91,89 @@ with tab3:
     st.markdown("---")
 
     # =========================================================================
-    # 2. SECCIÓN DE ERRORES TÍPICOS CON FUENTE AMPLIADA
+    # 2. SECCIÓN DE ERRORES TÍPICOS (BORDE ROJO Y FUENTE TIPOGRÁFICA ESTÁNDAR)
     # =========================================================================
     st.markdown("""
     <style>
-        .error-title {
-            font-size: 26px !important;
-            font-weight: bold !important;
-            color: #DC2626 !important;
-            margin-bottom: 12px;
-        }
-        .error-sub {
-            font-size: 20px !important;
-            font-weight: bold !important;
-            color: #B91C1C !important;
-            margin-top: 18px;
-        }
-        .error-body {
-            font-size: 17px !important;
-            line-height: 1.6 !important;
-            color: #1F2937 !important;
-        }
-        .error-box {
-            background-color: #FEF2F2;
-            border-left: 6px solid #DC2626;
-            padding: 20px;
+        .error-card {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: #FFFFFF;
+            border: 2px solid #E11D48;
             border-radius: 8px;
+            padding: 24px;
             margin-bottom: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .error-card-header {
+            font-size: 22px;
+            font-weight: 700;
+            color: #E11D48;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #F3F4F6;
+            padding-bottom: 8px;
+        }
+        .error-card-sub {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-top: 16px;
+            margin-bottom: 6px;
+        }
+        .error-card-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #374151;
+        }
+        .error-card-text ul {
+            margin-top: 4px;
+            margin-bottom: 8px;
+            padding-left: 20px;
+        }
+        .error-card-text code {
+            background-color: #F3F4F6;
+            color: #D97706;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
         }
     </style>
 
-    <div class="error-box">
-        <div class="error-title">⚠️ Errores Típicos de Modelamiento y Diagnóstico en Gurobi</div>
-        <div class="error-body">
-            A continuación se resumen los fallos más frecuentes al formular o programar un modelo en Gurobi:
+    <div class="error-card">
+        <div class="error-card-header">⚠️ Errores Típicos de Modelamiento y Diagnóstico en Gurobi</div>
+        <div class="error-card-text">
+            Resumen de fallos frecuentes al formular y programar modelos en Gurobi:
         </div>
         
-        <div class="error-sub">1. Diagnóstico por Estado del Solver (model.Status)</div>
-        <div class="error-body">
+        <div class="error-card-sub">1. Diagnóstico por Estado del Solver (model.Status)</div>
+        <div class="error-card-text">
             <ul>
                 <li><b>UNBOUNDED (Estado 4):</b> La función objetivo crece o decrece al infinito. Ocurre por <b>falta de restricciones de capacidad</b> o cotas en las variables.</li>
-                <li><b>INFEASIBLE (Estado 3):</b> No existe ninguna solución factible. Ocurre por <b>contradicciones lógicas</b> (signos equivocados <code>>=</code> por <code><=</code>) o demandas mayores a la capacidad disponible.</li>
-                <li><b>INF_OR_UNBD (Estado 5):</b> Modelo infactible o no acotado. Ocurre habitualmente al omitir dominios base como <code>lb=0</code>.</li>
+                <li><b>INFEASIBLE (Estado 3):</b> No existe ninguna solución factible. Ocurre por <b>contradicciones lógicas</b> (signos equivocados <code>&gt;=</code> por <code>&lt;=</code>) o demandas mayores a la capacidad disponible.</li>
+                <li><b>INF_OR_UNBD (Estado 5):</b> Modelo infactible o no acotado. Ocurre al omitir dominios base como <code>lb=0</code>.</li>
             </ul>
         </div>
 
-        <div class="error-sub">2. Errores de Declaración de Variables</div>
-        <div class="error-body">
+        <div class="error-card-sub">2. Errores de Declaración de Variables</div>
+        <div class="error-card-text">
             <ul>
                 <li><b>Variables continuas no negativas por defecto:</b> <code>model.addVar()</code> asume <code>lb=0.0</code>. Si requieres variables irrestrictas (ej. utilidades negativas), debes indicar explícitamente <code>lb=-GRB.INFINITY</code>.</li>
                 <li><b>Omisión de vtype en variables indexadas:</b> Si no especificas <code>vtype=GRB.BINARY</code> en <code>addVars()</code>, Gurobi asumirá que son continuas y entregará valores fraccionarios (ej. 0.34).</li>
             </ul>
         </div>
 
-        <div class="error-sub">3. Errores en la Función Objetivo</div>
-        <div class="error-body">
+        <div class="error-card-sub">3. Errores en la Función Objetivo</div>
+        <div class="error-card-text">
             <ul>
                 <li><b>Sentido por defecto:</b> Gurobi asume <code>GRB.MINIMIZE</code> si omites el segundo argumento en <code>setObjective()</code>. Si estás maximizando beneficios, debes especificar <code>GRB.MAXIMIZE</code>.</li>
                 <li><b>Costos fijos desconectados:</b> Sumar la binaria de costo fijo $y_i$ en el objetivo pero olvidar la restricción de activación Big-M ($x_i \le M \cdot y_i$).</li>
             </ul>
         </div>
 
-        <div class="error-sub">4. Errores en el Parámetro Big-M</div>
-        <div class="error-body">
+        <div class="error-card-sub">4. Errores en el Parámetro Big-M</div>
+        <div class="error-card-text">
             <ul>
                 <li><b>M demasiado pequeño:</b> Recorta y elimina soluciones válidas de la región factible.</li>
-                <li><b>M demasiado grande ($> 10^8$):</b> Produce problemas de mala condición numérica. Gurobi tratará valores muy pequeños como cero, permitiendo producir $x_i > 0$ sin pagar el costo fijo.</li>
+                <li><b>M demasiado grande (&gt; 10^8):</b> Produce problemas de mala condición numérica. Gurobi tratará valores muy pequeños como cero, permitiendo producir $x_i &gt; 0$ sin pagar el costo fijo.</li>
             </ul>
         </div>
     </div>
