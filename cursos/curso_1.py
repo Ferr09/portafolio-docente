@@ -38,186 +38,211 @@ with tab2:
         )
 
 with tab3:
-    st.subheader("💻 Sintaxis y Formulario Computacional Gurobi (`gurobipy`)")
-    st.write("""
-    Consulta la equivalencia entre la formulación matemática y su implementación directa en **Python con Gurobi**.
-    """)
+    st.subheader("💻 Formatos Generales por Tipo de Modelo de PPL")
+    st.write("Estructuras estándar de formulación e implementación en Python con Gurobi (`gurobipy`).")
 
-    # --- DESPLEGABLE 1: FORMULARIO SINTÁCTICO DE GUROBI ---
-    with st.expander("📖 **Ver Formulario Sintáctico Completo (Variables, Objetivos, Big-M e Indicadoras)**", expanded=True):
-        st.markdown("### 1. Declaración de Variables y Dominios")
-        st.markdown("""
-        | Tipo de Variable | Expresión Matemática | Sintaxis Computacional (`gurobipy`) |
-        | :--- | :--- | :--- |
-        | **Continua No Negativa** | $x \\in \\mathbb{R}_{\\ge 0}$ | `x = model.addVar(lb=0, vtype=GRB.CONTINUOUS, name="x")` |
-        | **Continua Irrestricta** | $x \\in \\mathbb{R}$ | `x = model.addVar(lb=-GRB.INFINITY, vtype=GRB.CONTINUOUS)` |
-        | **Binaria** | $x \\in \\{0, 1\\}$ | `x = model.addVar(vtype=GRB.BINARY, name="x")` |
-        | **Entera General** | $x \\in \\mathbb{Z}_{\\ge 0}$ | `x = model.addVar(lb=0, vtype=GRB.INTEGER, name="x")` |
-        | **Entera Acotada** | $x \\in \\{L, \\dots, U\\}$ | `x = model.addVar(lb=L, ub=U, vtype=GRB.INTEGER)` |
-        | **Indexada por Conjuntos** | $x_{i,j} \\in \\mathbb{R}_{\\ge 0}, \\quad \\forall i \\in I, j \\in J$ | `x = model.addVars(I, J, lb=0, vtype=GRB.CONTINUOUS, name="x")` |
-        """)
-
-        st.markdown("---")
-        st.markdown("### 2. Función Objetivo (Exclusivamente Lineal)")
-        st.markdown("""
-        | Tipo de Objetivo | Expresión Matemática | Sintaxis Computacional (`gurobipy`) |
-        | :--- | :--- | :--- |
-        | **Lineal (Minimización)** | $\\min \\sum_{i \\in I} c_i x_i$ | `model.setObjective(gp.quicksum(c[i] * x[i] for i in I), GRB.MINIMIZE)` |
-        | **Lineal (Maximización)** | $\\max \\sum_{i \\in I} c_i x_i$ | `model.setObjective(gp.quicksum(c[i] * x[i] for i in I), GRB.MAXIMIZE)` |
-        | **Lineal Vectorial/Matricial** | $\\min c^T x$ | `model.setObjective(c @ x, GRB.MINIMIZE)` |
-        """)
-
-        st.markdown("---")
-        st.markdown("### 3. Lógica Booleana y Condicionales (Big-M)")
-        st.markdown("""
-        | Concepto Lógico | Expresión Matemática | Sintaxis Computacional (`gurobipy`) |
-        | :--- | :--- | :--- |
-        | **Activación / Capacidad (Big-M)** | $x \\le M \\cdot y, \\quad y \\in \\{0, 1\\}$ | `model.addConstr(x <= M * y)` |
-        | **Costo Fijo con Producción** | $x_i \\le M_i \\cdot y_i \\quad \\forall i \\in I$ | `model.addConstrs(x[i] <= M[i] * y[i] for i in I)` |
-        | **O Exclusivo (Either-Or)** | $\\begin{cases} f(x) \\le b_1 + M y \\\\ g(x) \\le b_2 + M(1-y) \\end{cases}$ | `model.addConstr(f_x <= b1 + M * y)`<br>`model.addConstr(g_x <= b2 + M * (1 - y))` |
-        | **Seleccionar $k$ de $N$** | $\\sum_{i \\in I} y_i = k$ | `model.addConstr(gp.quicksum(y[i] for i in I) == k)` |
-        """)
-
-        st.markdown("---")
-        st.markdown("### 4. Restricciones Indicadoras Generalizadas")
-        st.markdown("""
-        | Relación Lógica | Expresión Matemática | Sintaxis Computacional (`gurobipy`) |
-        | :--- | :--- | :--- |
-        | **Si $y=1 \\implies a^T x \\le b$** | $y = 1 \\implies \\sum_{j} a_j x_j \\le b$ | `model.addGenConstrIndicator(y, True, gp.quicksum(a[j]*x[j] for j in J) <= b)` |
-        | **Si $y=0 \\implies a^T x \\le b$** | $y = 0 \\implies \\sum_{j} a_j x_j \\le b$ | `model.addGenConstrIndicator(y, False, gp.quicksum(a[j]*x[j] for j in J) <= b)` |
-        | **Implicación con Igualdad** | $y = 1 \\implies \\sum_{j} a_j x_j = b$ | `model.addGenConstrIndicator(y, True, gp.quicksum(a[j]*x[j] for j in J) == b)` |
-        """)
-
-    # --- DESPLEGABLE 2: ERRORES TÍPICOS DE MODELAMIENTO Y DIAGNÓSTICO EN GUROBI ---
-    with st.expander("⚠️ **Errores Típicos de Modelamiento y Diagnóstico en Gurobi**", expanded=False):
-        st.markdown("""
-        Al formular un modelo en Gurobi, los errores más comunes no siempre lanzan un fallo en Python, sino que resultan en un **modelo mal planteado** (soluciones absurdas o infactibles). A continuación se resumen los diagnósticos clave:
-
-        ---
-
-        #### 1. Diagnóstico por Estado del Solver (`model.Status`)
-
-        | Estado / Mensaje en Consola | Significado Matemático | Causa Habitual en el Código |
-        | :--- | :--- | :--- |
-        | **`UNBOUNDED` (Estado 4)** | La función objetivo puede crecer/decrecer hacia el infinito. | **Falta de restricciones:** Olvidaste acotar variables de producción/flujo o la función objetivo maximiza sin limite. |
-        | **`INFEASIBLE` (Estado 3)** | No existe ninguna solución que cumpla todas las restricciones a la vez. | **Contradicción lógica:** Restricciones con el signo equivocado (`>=` en vez de `<=`), capacidades menores a la demanda mínima, o constante $M$ muy pequeña. |
-        | **`INF_OR_UNBD` (Estado 5)** | El modelo es Infactible o No Acotado. | Ocurre frecuentemente cuando faltan dominios de variables ($lb=0$) y las restricciones se contradicen. |
-
-        > 💡 **Tip de Diagnóstico para Infactibilidad:** Si tu modelo es `INFEASIBLE`, puedes agregar esta línea para que Gurobi te indique qué restricciones se están contradiciendo (Irreducible Inconsistent Subsystem):
-        """)
-        
-        st.code("""
-# Si el modelo resulta infactible, genera el reporte de conflicto
-if model.status == GRB.INFEASIBLE:
-    model.computeIIS()
-    model.write("modelo_conflicto.ilp")  # Guarda las restricciones contradictorias
-        """, language="python")
-
-        st.markdown("""
-        ---
-
-        #### 2. Errores de Declaración de Variables y Dominios
-
-        * **Variables Continuas Negativas por Defecto:**
-          * **Sintaxis:** `x = model.addVar()` (por defecto `lb=0.0`).
-          * **Error Típico:** Si necesitas una variable irrestricta (que pueda tomar valores negativos como utilidades o desviaciones), debes declarar explícitamente `lb=-GRB.INFINITY`. De lo contrario, Gurobi asumirá $x \\ge 0$.
-        * **Confusión de Dominios en Variables Indexadas:**
-          * **Error Típico:** Olvidar especificar `vtype=GRB.BINARY` o `vtype=GRB.INTEGER` al usar `addVars()`. Si no se especifica, Gurobi declara las variables como **continuas**, lo que provocará que tus decisiones "sí/no" adopten valores fraccionarios como `0.45` o `0.82`.
-
-        ---
-
-        #### 3. Errores en la Función Objetivo
-
-        * **Olvidar el Sentido de Optimización (`GRB.MINIMIZE` vs `GRB.MAXIMIZE`):**
-          * **Error Típico:** Por defecto, si usas `model.setObjective(expresion)` sin segundo argumento, Gurobi asume **Minimización**. Si estás maximizando beneficios y lo olvidas, el modelo intentará hacer la producción cero o no acotarse.
-        * **Costos Fijos Desconectados:**
-          * **Sintaxis Incorrecta:** Sumar la variable binaria $y_i$ en la función objetivo sin agregar la restricción de activación Big-M ($x_i \\le M \\cdot y_i$).
-          * **Consecuencia:** Como $y_i$ suma costo en la función objetivo y no restringe a $x_i$, el solver fijará $y_i = 0$ y $x_i > 0$, generando una solución matemáticamente libre de costo fijo.
-
-        ---
-
-        #### 4. Errores Frecuentes en Big-M y Lógica Booleana
-
-        * **Valor de $M$ Demasiado Pequeño:**
-          * **Consecuencia:** Si la producción real $x_i$ necesita ser $1500$, pero fijaste $M = 1000$ en la restricción $x_i \\le M \\cdot y_i$, estás recortando artificialmente la región factible del problema.
-        * **Valor de $M$ Demasiado Grande ($10^9$ o más):**
-          * **Consecuencia:** Genera **problemas de mala condición numérica** (*ill-conditioning*). Gurobi puede considerar que un número muy pequeño (como $0.0000001$) es equivalente a $0$, permitiendo que $x_i > 0$ sin activar la binaria $y_i$.
-        * **Solución:** Utilizar el mínimo $M$ válido (e.g., la capacidad máxima física de la planta) o sustituir por **Restricciones Indicadoras** (`model.addGenConstrIndicator`).
-        """)
-
-    st.markdown("---")
-    st.subheader("🚀 Ejemplos Código Ejecutable")
-
-    tab_ej1, tab_ej2, tab_ej3 = st.tabs([
-        "1. Estructura General", 
-        "2. Aplicación Big-M", 
-        "3. Restricciones Indicadoras"
+    # --- SECCIÓN 1: FORMATOS GENERALES POR TIPO DE MODELO ---
+    tab_p1, tab_p2, tab_p3, tab_p4 = st.tabs([
+        "🎒 1. Problema de la Mochila", 
+        "🏭 2. Costo Fijo / Capacidad", 
+        "🏢 3. Localización (Facility Location)",
+        "📦 4. Dimensionamiento de Lote (Lot Sizing)"
     ])
 
-    with tab_ej1:
+    with tab_p1:
+        st.markdown("### Formato General: Problema de la Mochila (Knapsack)")
+        st.write("Selección de un conjunto de ítems para maximizar valor sujeto a un límite de capacidad física o presupuestaria.")
         st.code("""
 import gurobipy as gp
 from gurobipy import GRB
 
-# Crear Modelo
-model = gp.Model("Ejemplo_Base")
+model = gp.Model("Knapsack")
 
-# Conjuntos y Datos
-I = ["A", "B", "C"]
-c = {"A": 25, "B": 30, "C": 20}
-a = {"A": 2, "B": 3.5, "C": 1.5}
+# Conjuntos y Parámetros
+I = ["Item1", "Item2", "Item3"]
+v = {"Item1": 10, "Item2": 15, "Item3": 25}  # Valor / Utilidad
+w = {"Item1": 2,  "Item2": 4,  "Item3": 5}   # Peso / Recurso
+W_max = 8                                    # Capacidad máxima
 
-# 1. Variables Indexadas
-x = model.addVars(I, lb=0, vtype=GRB.CONTINUOUS, name="x")
+# Variable: y_i = 1 si se selecciona el ítem i, 0 e.o.c.
+y = model.addVars(I, vtype=GRB.BINARY, name="y")
 
-# 2. Función Objetivo
-model.setObjective(gp.quicksum(c[i] * x[i] for i in I), GRB.MAXIMIZE)
+# Función Objetivo: Maximizar valor total
+model.setObjective(gp.quicksum(v[i] * y[i] for i in I), GRB.MAXIMIZE)
 
-# 3. Restricción Lineal
-model.addConstr(gp.quicksum(a[i] * x[i] for i in I) <= 100, name="Capacidad")
+# Restricción: No superar la capacidad
+model.addConstr(gp.quicksum(w[i] * y[i] for i in I) <= W_max, name="Capacidad")
 
-# 4. Optimizar
 model.optimize()
         """, language="python")
 
-    with tab_ej2:
+    with tab_p2:
+        st.markdown("### Formato General: Activación y Costo Fijo (Big-M)")
+        st.write("Modelación de decisiones donde la producción o activación de una línea incurre en un costo fijo único.")
         st.code("""
 import gurobipy as gp
 from gurobipy import GRB
 
-model = gp.Model("Ejemplo_BigM")
-M = 1000
-I = [1, 2, 3]
-c, f = {1: 10, 2: 15, 3: 20}, {1: 100, 2: 150, 3: 120}
+model = gp.Model("Costo_Fijo")
 
+# Conjuntos y Parámetros
+I = ["Planta1", "Planta2"]
+c = {"Planta1": 5, "Planta2": 8}     # Costo variable por unidad
+f = {"Planta1": 100, "Planta2": 150} # Costo fijo de activación
+M = {"Planta1": 500, "Planta2": 600} # Capacidad máxima por planta
+
+# Variables: x_i continua (nivel), y_i binaria (activación)
 x = model.addVars(I, lb=0, vtype=GRB.CONTINUOUS, name="x")
 y = model.addVars(I, vtype=GRB.BINARY, name="y")
 
-# Objetivo: Minimizar Costo Variable + Costo Fijo
-model.setObjective(gp.quicksum(c[i] * x[i] + f[i] * y[i] for i in I), GRB.MINIMIZE)
+# Función Objetivo: Minimizar Costo Variable + Costo Fijo
+model.setObjective(gp.quicksum(c[i]*x[i] + f[i]*y[i] for i in I), GRB.MINIMIZE)
 
-# Relación Big-M: x_i <= M * y_i
-model.addConstrs((x[i] <= M * y[i] for i in I), name="BigM_CostoFijo")
+# Restricción Big-M: x_i <= M_i * y_i
+model.addConstrs((x[i] <= M[i] * y[i] for i in I), name="Activacion_BigM")
 
 model.optimize()
         """, language="python")
 
-    with tab_ej3:
+    with tab_p3:
+        st.markdown("### Formato General: Localización de Instalaciones (Facility Location)")
+        st.write("Decidir qué instalaciones abrir y cómo asignar la demanda de los clientes hacia ellas.")
         st.code("""
 import gurobipy as gp
 from gurobipy import GRB
 
-model = gp.Model("Ejemplo_Indicadoras")
-J = [1, 2, 3]
-a = {1: 2.5, 2: 1.0, 3: 4.0}
-b = 25.0
+model = gp.Model("Facility_Location")
 
-x = model.addVars(J, lb=0, vtype=GRB.CONTINUOUS, name="x")
-y = model.addVar(vtype=GRB.BINARY, name="y")
+# Conjuntos
+I = ["Bodega1", "Bodega2"]  # Candidatos a instalación
+J = ["Cliente1", "Cliente2", "Cliente3"]  # Clientes
 
-# Restricción Indicadora: Si y = 1 => sum(a_j * x_j) <= b
-model.addGenConstrIndicator(y, True, gp.quicksum(a[j] * x[j] for j in J) <= b, name="Si_Y_Es_1")
+f = {"Bodega1": 1000, "Bodega2": 1500} # Costo de apertura
+c = {("Bodega1", "Cliente1"): 4, ("Bodega1", "Cliente2"): 6, ("Bodega1", "Cliente3"): 9,
+     ("Bodega2", "Cliente1"): 5, ("Bodega2", "Cliente2"): 3, ("Bodega2", "Cliente3"): 4}
 
-model.setObjective(gp.quicksum(x[j] for j in J), GRB.MAXIMIZE)
+# Variables
+y = model.addVars(I, vtype=GRB.BINARY, name="y")                   # 1 si abre instalación i
+x = model.addVars(I, J, lb=0, vtype=GRB.CONTINUOUS, name="x")       # Flujo asignado de i a j
+
+# Objetivo: Minimizar Costos de Apertura + Costos de Transporte
+model.setObjective(
+    gp.quicksum(f[i] * y[i] for i in I) + 
+    gp.quicksum(c[i, j] * x[i, j] for i in I for j in J), 
+    GRB.MINIMIZE
+)
+
+# Restricción 1: Satisfacer demanda de cada cliente j (asumiendo demanda normalizada = 1)
+model.addConstrs((gp.quicksum(x[i, j] for i in I) == 1 for j in J), name="Demanda")
+
+# Restricción 2: Solo enviar desde instalaciones abiertas (x_ij <= y_i)
+model.addConstrs((x[i, j] <= y[i] for i in I for j in J), name="Apertura")
+
 model.optimize()
         """, language="python")
+
+    with tab_p4:
+        st.markdown("### Formato General: Dimensionamiento de Lote (Lot Sizing)")
+        st.write("Planificación multi-período equilibrando costos de producción, inventario y costos fijos de preparación (*setup*).")
+        st.code("""
+import gurobipy as gp
+from gurobipy import GRB
+
+model = gp.Model("Lot_Sizing")
+
+T = [1, 2, 3, 4] # Períodos de tiempo
+d = {1: 100, 2: 150, 3: 200, 4: 120} # Demanda por período
+c, f, h = 10, 500, 2                 # Costo prod, costo fijo, costo inventario
+M = 1000                             # Big-M (suma de demandas futuras)
+
+# Variables
+x = model.addVars(T, lb=0, vtype=GRB.CONTINUOUS, name="x") # Producción
+s = model.addVars(T, lb=0, vtype=GRB.CONTINUOUS, name="s") # Inventario al final del período
+y = model.addVars(T, vtype=GRB.BINARY, name="y")           # Setup de producción
+
+# Objetivo
+model.setObjective(
+    gp.quicksum(c*x[t] + f*y[t] + h*s[t] for t in T), 
+    GRB.MINIMIZE
+)
+
+# Balance de Inventarios: s_{t-1} + x_t = d_t + s_t
+for t in T:
+    s_prev = s[t-1] if t > 1 else 0  # Inventario inicial s_0 = 0
+    model.addConstr(s_prev + x[t] == d[t] + s[t], name=f"Balance_t{t}")
+    model.addConstr(x[t] <= M * y[t], name=f"Setup_t{t}")
+
+model.optimize()
+        """, language="python")
+
+    st.markdown("---")
+
+    # --- SECCIÓN 2: ERRORES TÍPICOS CON FUENTE AUMENTADA (HTML/CSS) ---
+    st.markdown("""
+    <style>
+        .error-title {
+            font-size: 26px !important;
+            font-weight: bold !important;
+            color: #DC2626 !important;
+            margin-bottom: 10px;
+        }
+        .error-sub {
+            font-size: 20px !important;
+            font-weight: bold !important;
+            color: #B91C1C !important;
+            margin-top: 15px;
+        }
+        .error-body {
+            font-size: 17px !important;
+            line-height: 1.6 !important;
+            color: #1F2937 !important;
+        }
+        .error-box {
+            background-color: #FEF2F2;
+            border-left: 6px solid #DC2626;
+            padding: 18px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <div class="error-box">
+        <div class="error-title">⚠️ Errores Típicos de Modelamiento en Gurobi</div>
+        <div class="error-body">
+            A continuación se resumen los fallos más frecuentes al formular o programar un modelo en Gurobi:
+        </div>
+        
+        <div class="error-sub">1. Diagnóstico por Estado del Solver (model.Status)</div>
+        <div class="error-body">
+            <ul>
+                <li><b>UNBOUNDED (Estado 4):</b> La función objetivo crece o decrece al infinito. Ocurre por <b>falta de restricciones de capacidad</b> o cotas en las variables.</li>
+                <li><b>INFEASIBLE (Estado 3):</b> No existe ninguna solución factible. Ocurre por <b>contradicciones lógicas</b> (signos equivocados <code>>=</code> por <code><=</code>) o demandas mayores a la capacidad disponible.</li>
+                <li><b>INF_OR_UNBD (Estado 5):</b> Modelo infactible o no acotado. Ocurre habitualmente al omitir dominios base como <code>lb=0</code>.</li>
+            </ul>
+        </div>
+
+        <div class="error-sub">2. Errores de Declaración de Variables</div>
+        <div class="error-body">
+            <ul>
+                <li><b>Variables continuas no negativas por defecto:</b> <code>model.addVar()</code> asume <code>lb=0.0</code>. Si requieres variables irrestrictas (ej. utilidades negativas), debes indicar explícitamente <code>lb=-GRB.INFINITY</code>.</li>
+                <li><b>Omisión de vtype en variables indexadas:</b> Si no especificas <code>vtype=GRB.BINARY</code> en <code>addVars()</code>, Gurobi asumirá que son continuas y entregará valores fraccionarios (ej. 0.34).</li>
+            </ul>
+        </div>
+
+        <div class="error-sub">3. Errores en la Función Objetivo</div>
+        <div class="error-body">
+            <ul>
+                <li><b>Sentido por defecto:</b> Gurobi asume <code>GRB.MINIMIZE</code> si omites el segundo argumento en <code>setObjective()</code>. Si estás maximizando beneficios, debes especificar <code>GRB.MAXIMIZE</code>.</li>
+                <li><b>Costos fijos desconectados:</b> Sumar la binaria de costo fijo $y_i$ en el objetivo pero olvidar la restricción de activación Big-M ($x_i \le M \cdot y_i$).</li>
+            </ul>
+        </div>
+
+        <div class="error-sub">4. Errores en el Parámetro Big-M</div>
+        <div class="error-body">
+            <ul>
+                <li><b>M demasiado pequeño:</b> Recorta y elimina soluciones válidas de la región factible.</li>
+                <li><b>M demasiado grande ($> 10^8$):</b> Produce problemas de mala condición numérica. Gurobi tratará valores muy pequeños como cero, permitiendo producir $x_i > 0$ sin pagar el costo fijo.</li>
+            </ul>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
