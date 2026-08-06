@@ -91,35 +91,35 @@ with tab3:
     st.markdown("---")
 
     # =========================================================================
-    # 2. ERRORES TÍPICOS DE MODELAMIENTO EN AZUL MARINO Y EN TABLA DE 3 COLUMNAS
+    # 2. ERRORES TÍPICOS DE MODELAMIENTO CON CÓDIGOS DE LOG DE PYTHON Y GUROBI
     # =========================================================================
     with st.container(border=True):
         st.markdown("<h3 style='color: #1E3A8A; margin-bottom: 0px;'>⚠️ Errores Típicos de Modelamiento y Diagnóstico en Gurobi</h3>", unsafe_allow_html=True)
-        st.write("Guía rápida para identificar fallos de formulación según los estados del solver y errores comunes de código:")
+        st.write("Guía rápida para identificar fallos de formulación a través de los códigos de estado del solver (`model.Status`) y errores comunes de sintaxis:")
 
-        # TABLA 1: ESTADOS DEL SOLVER
-        st.markdown("#### 1. Diagnósticos de Salida del Solver (`model.Status`)")
+        # TABLA 1: ESTADOS DEL SOLVER (LOGS DE MODEL.STATUS)
+        st.markdown("#### 1. Diagnósticos por Código de Salida del Solver (`model.Status`)")
         st.markdown("""
-        | Estado / Mensaje | Significado (Origen del Error) | Consejo / Solución Recomendada |
+        | Error / Log de Python (`model.Status`) | Significado (Origen del Error) | Consejo / Solución Recomendada |
         | :--- | :--- | :--- |
-        | **`UNBOUNDED`** *(Estado 4)* | **Falta de Restricciones / Región No Acotada:** La función objetivo puede crecer o decrecer hacia el infinito. | Revisa que todas las variables tengan capacidad máxima o que no falte acotar el flujo de producción/demanda. |
-        | **`INFEASIBLE`** *(Estado 3)* | **Contradicción Lógica:** No existe combinación de variables que cumpla todas las restricciones simultáneamente. | Ejecuta `model.computeIIS()` para encontrar las restricciones contradictorias, o revisa los signos (`<=` vs `>=`). |
-        | **`INF_OR_UNBD`** *(Estado 5)* | **Ambigüedad de Dominio:** El solver no puede determinar si el modelo es no acotado o infactible. | Fija explícitamente las cotas inferiores de las variables (`lb=0`) y vuelve a ejecutar la optimización. |
+        | **`model.Status == GRB.UNBOUNDED`** *(Estado 4)* | **Falta de Restricciones / Región No Acotada:** La función objetivo puede crecer o decrecer hacia el infinito. | Revisa que todas las variables tengan capacidad máxima o que no falte acotar el flujo de producción/demanda. |
+        | **`model.Status == GRB.INFEASIBLE`** *(Estado 3)* | **Contradicción Lógica:** No existe combinación de variables que cumpla todas las restricciones simultáneamente. | Ejecuta `model.computeIIS()` para aislar las restricciones contradictorias o revisa signos (`<=` vs `>=`). |
+        | **`model.Status == GRB.INF_OR_UNBD`** *(Estado 5)* | **Ambigüedad de Dominio:** El solver no distingue si el modelo es infactible o no acotado. | Fija explícitamente las cotas inferiores de las variables (`lb=0`) y reoptimiza con `model.optimize()`. |
         """)
 
         st.markdown("---")
 
-        # TABLA 2: ERRORES DE MODELACIÓN Y FORMULACIÓN
-        st.markdown("#### 2. Errores Frecuentes en la Declaración de Variables y Lógica")
+        # TABLA 2: SÍNTOMAS Y ERRORES DE SINTAXIS EN CÓDIGO
+        st.markdown("#### 2. Síntomas y Omisiones Frecuentes en el Código Python")
         st.markdown("""
-        | Error / Síntoma en Código | Significado (Origen del Error) | Consejo / Solución Recomendada |
+        | Error / Síntoma o Omisión en Código | Significado (Origen del Error) | Consejo / Solución Recomendada |
         | :--- | :--- | :--- |
-        | **Variables negativas inesperadas** | **Dominio mal especificado:** `model.addVar()` asigna $x \\ge 0$ por defecto. | Si requieres variables irrestrictas (p. ej. utilidades o desviaciones), declara `lb=-GRB.INFINITY`. |
-        | **Variables binarias con decimales** | **Tipo de Variable no definido:** Se omitió el parámetro `vtype=GRB.BINARY` en `addVars()`. | Al usar `addVars()`, incluye siempre `vtype=GRB.BINARY`. De lo contrario, Gurobi las tratará como continuas ($0 \\le y \\le 1$). |
-        | **Objetivo minimiza al maximizar** | **Sentido por defecto:** `model.setObjective()` asume minimización si no se especifica el segundo argumento. | Para problemas de maximización, especifica siempre `GRB.MAXIMIZE` como segundo parámetro en `setObjective()`. |
-        | **Costo fijo cobrado sin producir** | **Relación Big-M desconectada:** Se agregó la variable $y_i$ a la función objetivo pero no en las restricciones. | Incluye la restricción de activación de capacidad $x_i \\le M \\cdot y_i$ para vincular la producción al costo fijo. |
-        | **Solución no activa binaria $y_i$ ($x_i > 0, y_i = 0$)** | **$M$ excesivamente grande ($>10^8$):** Genera imprecisión numérica (*ill-conditioning*). | Usa el menor $M$ físicamente válido (ej. capacidad real de planta) o reemplaza por `addGenConstrIndicator`. |
-        | **Cortar soluciones válidas** | **$M$ demasiado pequeño:** Se usó una constante $M$ menor al valor real que puede tomar $x_i$. | Calcula $M$ como la suma de las demandas totales o el límite superior real del sistema. |
+        | **Sin `vtype=GRB.BINARY` en `addVars()`** | **Tipo de Variable no definido:** Al omitir `vtype`, Gurobi asigna por defecto `vtype=GRB.CONTINUOUS`. | Agrega explícitamente `vtype=GRB.BINARY` o `vtype=GRB.INTEGER` para evitar soluciones con decimales (ej. $y_i = 0.45$). |
+        | **`x.X < 0` o `lb` no especificado** | **Dominio no acotado inferiormente:** `model.addVar()` fija $x \\ge 0$ por defecto (`lb=0.0`). | Si la variable permite valores negativos (p. ej. utilidades/desviaciones), declara `lb=-GRB.INFINITY`. |
+        | **`setObjective(expr)` sin `GRB.MAXIMIZE`** | **Sentido de optimización invertido:** Gurobi asume `GRB.MINIMIZE` por defecto si se omite el segundo argumento. | Para problemas de maximización de beneficios, especifica `model.setObjective(expr, GRB.MAXIMIZE)`. |
+        | **`y_i` en objetivo sin `x_i <= M * y_i`** | **Relación Big-M desconectada:** La binaria suma costo en el objetivo pero no restringe físicamente la producción. | Vincula la variable continua a la binaria agregando la restricción de capacidad activa `x[i] <= M * y[i]`. |
+        | **$M > 10^8$ (*Ill-Conditioning*)** | **Inestabilidad Numérica:** $M$ gigante genera tolerancia imprecisa y el solver asume $y_i = 0$ con $x_i > 0$. | Fija $M$ al menor límite físicamente posible (ej. suma de demandas) o sustituye por `addGenConstrIndicator`. |
+        | **$M < \max(x_i)$ (Corta solución óptima)** | **Region Factible Recortada:** La constante $M$ es menor que el valor real necesario para la producción $x_i$. | Ajusta $M$ para que sea estrictamente mayor o igual a la capacidad física del sistema. |
         """)
 
     st.markdown("---")
