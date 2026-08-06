@@ -16,14 +16,25 @@ with tab2:
     """)
     
     with st.container(border=True):
-        st.markdown("### 📝 Cuestionario Semana 1 - Programación Lineal")
-        st.write("Aprende a reconocer rápidamente si un enunciado corresponde a modelos de problema de la mochila, dimensionamiento de lote o facility location.")
+        st.markdown("### 📝 Quiz Semana 1 - Programación Lineal & Modelos Clásicos")
+        st.write("Aprende a reconocer rápidamente si un enunciado corresponde a problemas de la mochila, dimensionamiento de lote, facility location u otros modelos fundamentales.")
         
         st.link_button(
-            label="🚀 Abrir Quiz (NotebookLM)", 
-            url="https://notebooklm.google.com/notebook/88dde8d7-ad8e-4a7e-bc20-57e61e5b08b6/artifact/e5e5339c-4d27-40b1-8b65-53d3ba490688?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_",
+            label="🚀 Abrir Quiz Semana 1 (NotebookLM)", 
+            url="https://notebook.google.com/notebook/88dde8d7-ad8e-4a7e-bc20-57e61e5b08b6/artifact/5ce3f142-5d02-4d9e-bc9a-8a2026bf98ef?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_",
             use_container_width=True,
             type="primary"
+        )
+
+    with st.container(border=True):
+        st.markdown("### 📝 Cuestionario General: Detección Rápida de Modelos")
+        st.write("Ejercita la identificación de estructuras entre Programación Lineal, Entera, Redes o Dinámica a partir de enunciados y expresiones matemáticas.")
+        
+        st.link_button(
+            label="🚀 Abrir Cuestionario General (NotebookLM)", 
+            url="https://notebooklm.google.com/notebook/88dde8d7-ad8e-4a7e-bc20-57e61e5b08b6/artifact/e5e5339c-4d27-40b1-8b65-53d3ba490688?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_",
+            use_container_width=True,
+            type="secondary"
         )
 
 with tab3:
