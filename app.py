@@ -33,27 +33,6 @@ cursos_data = [
         "descripcion": "Modelos de optimización, programación lineal, redes y teoría de decisiones.",
         "icono": "📊",
         "archivo": "cursos/curso_1.py"
-    },
-    {
-        "id": "curso2",
-        "titulo": "Econometría Aplicada",
-        "descripcion": "Modelos de regresión, variables instrumentales, efectos fijos y series de tiempo.",
-        "icono": "📈",
-        "archivo": "cursos/curso_2.py"
-    },
-    {
-        "id": "curso3",
-        "titulo": "Ciencia de Datos & Data Mining",
-        "descripcion": "Procesamiento de datos en Python/R, aprendizaje supervisado y visualización.",
-        "icono": "💻",
-        "archivo": "cursos/curso_3.py"
-    },
-    {
-        "id": "curso4",
-        "titulo": "Gestión de Operaciones",
-        "descripcion": "Logística, cadenas de suministro, inventarios y simulación de procesos.",
-        "icono": "⚙️",
-        "archivo": "cursos/curso_4.py"
     }
 ]
 
