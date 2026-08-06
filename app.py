@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # Configuración de la página
 st.set_page_config(
@@ -25,11 +26,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- DICCIONARIO DE CURSOS ---
-# Puedes agregar más cursos fácilmente editando esta lista
 cursos_data = [
     {
         "id": "curso1",
-        "titulo": "Investigación Operativa",
+        "titulo": "Modelamiento y Optimización - IN3171",
         "descripcion": "Modelos de optimización, programación lineal, redes y teoría de decisiones.",
         "icono": "📊",
         "archivo": "cursos/curso_1.py"
@@ -63,18 +63,17 @@ def mostrar_landing_page():
     col_img, col_info = st.columns([1, 2], gap="large")
     
     with col_img:
-        # Puedes reemplazar la URL por una imagen local colocada en tu proyecto
         st.image("foto_fer.jpeg", use_container_width=True)
     
     with col_info:
         st.title("Portafolio Docente")
         st.subheader("Fernando Rojas")
         st.write("""
-        ¡Hola a todos! Soy fernando Rojas, estudiante de 5to Año de Ingeniería Civil Industrial en la Universidad de Chile. 
+        ¡Hola a todos! Soy Fernando Rojas, estudiante de 5to Año de Ingeniería Civil Industrial en la Universidad de Chile. 
         
         Bienvenidos a mi espacio docente. En este portal encontrarás el material didáctico,
         herramientas interactivas, guías de código y recursos desarrollados para los cursos
-        que imparto. Cualquier duda me pueden contactar al correo fernando.rojas@ug.uchile.cl, estaré feliz de responderles!
+        que imparto. Cualquier duda me pueden contactar al correo **fernando.rojas@ug.uchile.cl**, ¡estaré feliz de responderles!
         """)
         st.markdown("---")
 
@@ -113,22 +112,18 @@ if "curso_seleccionado" not in st.session_state:
 if st.session_state["curso_seleccionado"] == "home":
     mostrar_landing_page()
 else:
-    # Botón para volver a la Landing Page desde cualquier curso
+    # Botón lateral para regresar a la portada
     if st.sidebar.button("← Volver a la Portada"):
         st.session_state["curso_seleccionado"] = "home"
         st.rerun()
 
-    # Cargar el contenido del curso seleccionado
-    selected_id = st.session_state["curso_seleccionado"]
-    if selected_id == "curso1":
-        st.title("📊 Modelamiento y Optimización - IN3171")
-        st.write("Aquí anexarás tus guías de ejercicios, scripts en Python/R, pautas y simuladores.")
-    elif selected_id == "curso2":
-        st.title("📈 Econometría Aplicada")
-        st.write("Aquí anexarás tus conjuntos de datos, scripts de R/Stata y lecturas.")
-    elif selected_id == "curso3":
-        st.title("💻 Ciencia de Datos & Data Mining")
-        st.write("Aquí anexarás Jupyter Notebooks, datasets y proyectos prácticos.")
-    elif selected_id == "curso4":
-        st.title("⚙️ Gestión de Operaciones")
-        st.write("Aquí anexarás casos de estudio, planillas y modelos de simulación.")
+    # Buscar la información del curso seleccionado
+    c_info = next((item for item in cursos_data if item["id"] == st.session_state["curso_seleccionado"]), None)
+    
+    # Cargar dinámicamente el archivo .py del curso desde la carpeta cursos/
+    if c_info and os.path.exists(c_info["archivo"]):
+        with open(c_info["archivo"], encoding="utf-8") as f:
+            exec(f.read())
+    else:
+        st.title(c_info["titulo"] if c_info else "Curso")
+        st.info(f"El archivo `{c_info['archivo']}` aún no está disponible en el directorio.")
