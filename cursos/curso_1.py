@@ -91,98 +91,41 @@ with tab3:
     st.markdown("---")
 
     # =========================================================================
-    # 2. SECCIÓN DE ERRORES TÍPICOS (BORDE ROJO Y FUENTE TIPOGRÁFICA ESTÁNDAR)
+    # 2. ERRORES TÍPICOS DE MODELAMIENTO EN AZUL MARINO Y EN TABLA DE 3 COLUMNAS
     # =========================================================================
-    st.markdown("""
-    <style>
-        .error-card {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-            background-color: #FFFFFF;
-            border: 2px solid #E11D48;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 25px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .error-card-header {
-            font-size: 22px;
-            font-weight: 700;
-            color: #E11D48;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #F3F4F6;
-            padding-bottom: 8px;
-        }
-        .error-card-sub {
-            font-size: 16px;
-            font-weight: 600;
-            color: #111827;
-            margin-top: 16px;
-            margin-bottom: 6px;
-        }
-        .error-card-text {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #374151;
-        }
-        .error-card-text ul {
-            margin-top: 4px;
-            margin-bottom: 8px;
-            padding-left: 20px;
-        }
-        .error-card-text code {
-            background-color: #F3F4F6;
-            color: #D97706;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-    </style>
+    with st.container(border=True):
+        st.markdown("<h3 style='color: #1E3A8A; margin-bottom: 0px;'>⚠️ Errores Típicos de Modelamiento y Diagnóstico en Gurobi</h3>", unsafe_allow_html=True)
+        st.write("Guía rápida para identificar fallos de formulación según los estados del solver y errores comunes de código:")
 
-    <div class="error-card">
-        <div class="error-card-header">⚠️ Errores Típicos de Modelamiento y Diagnóstico en Gurobi</div>
-        <div class="error-card-text">
-            Resumen de fallos frecuentes al formular y programar modelos en Gurobi:
-        </div>
-        
-        <div class="error-card-sub">1. Diagnóstico por Estado del Solver (model.Status)</div>
-        <div class="error-card-text">
-            <ul>
-                <li><b>UNBOUNDED (Estado 4):</b> La función objetivo crece o decrece al infinito. Ocurre por <b>falta de restricciones de capacidad</b> o cotas en las variables.</li>
-                <li><b>INFEASIBLE (Estado 3):</b> No existe ninguna solución factible. Ocurre por <b>contradicciones lógicas</b> (signos equivocados <code>&gt;=</code> por <code>&lt;=</code>) o demandas mayores a la capacidad disponible.</li>
-                <li><b>INF_OR_UNBD (Estado 5):</b> Modelo infactible o no acotado. Ocurre al omitir dominios base como <code>lb=0</code>.</li>
-            </ul>
-        </div>
+        # TABLA 1: ESTADOS DEL SOLVER
+        st.markdown("#### 1. Diagnósticos de Salida del Solver (`model.Status`)")
+        st.markdown("""
+        | Estado / Mensaje | Significado (Origen del Error) | Consejo / Solución Recomendada |
+        | :--- | :--- | :--- |
+        | **`UNBOUNDED`** *(Estado 4)* | **Falta de Restricciones / Región No Acotada:** La función objetivo puede crecer o decrecer hacia el infinito. | Revisa que todas las variables tengan capacidad máxima o que no falte acotar el flujo de producción/demanda. |
+        | **`INFEASIBLE`** *(Estado 3)* | **Contradicción Lógica:** No existe combinación de variables que cumpla todas las restricciones simultáneamente. | Ejecuta `model.computeIIS()` para encontrar las restricciones contradictorias, o revisa los signos (`<=` vs `>=`). |
+        | **`INF_OR_UNBD`** *(Estado 5)* | **Ambigüedad de Dominio:** El solver no puede determinar si el modelo es no acotado o infactible. | Fija explícitamente las cotas inferiores de las variables (`lb=0`) y vuelve a ejecutar la optimización. |
+        """)
 
-        <div class="error-card-sub">2. Errores de Declaración de Variables</div>
-        <div class="error-card-text">
-            <ul>
-                <li><b>Variables continuas no negativas por defecto:</b> <code>model.addVar()</code> asume <code>lb=0.0</code>. Si requieres variables irrestrictas (ej. utilidades negativas), debes indicar explícitamente <code>lb=-GRB.INFINITY</code>.</li>
-                <li><b>Omisión de vtype en variables indexadas:</b> Si no especificas <code>vtype=GRB.BINARY</code> en <code>addVars()</code>, Gurobi asumirá que son continuas y entregará valores fraccionarios (ej. 0.34).</li>
-            </ul>
-        </div>
+        st.markdown("---")
 
-        <div class="error-card-sub">3. Errores en la Función Objetivo</div>
-        <div class="error-card-text">
-            <ul>
-                <li><b>Sentido por defecto:</b> Gurobi asume <code>GRB.MINIMIZE</code> si omites el segundo argumento en <code>setObjective()</code>. Si estás maximizando beneficios, debes especificar <code>GRB.MAXIMIZE</code>.</li>
-                <li><b>Costos fijos desconectados:</b> Sumar la binaria de costo fijo $y_i$ en el objetivo pero olvidar la restricción de activación Big-M ($x_i \le M \cdot y_i$).</li>
-            </ul>
-        </div>
-
-        <div class="error-card-sub">4. Errores en el Parámetro Big-M</div>
-        <div class="error-card-text">
-            <ul>
-                <li><b>M demasiado pequeño:</b> Recorta y elimina soluciones válidas de la región factible.</li>
-                <li><b>M demasiado grande (&gt; 10^8):</b> Produce problemas de mala condición numérica. Gurobi tratará valores muy pequeños como cero, permitiendo producir $x_i &gt; 0$ sin pagar el costo fijo.</li>
-            </ul>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        # TABLA 2: ERRORES DE MODELACIÓN Y FORMULACIÓN
+        st.markdown("#### 2. Errores Frecuentes en la Declaración de Variables y Lógica")
+        st.markdown("""
+        | Error / Síntoma en Código | Significado (Origen del Error) | Consejo / Solución Recomendada |
+        | :--- | :--- | :--- |
+        | **Variables negativas inesperadas** | **Dominio mal especificado:** `model.addVar()` asigna $x \\ge 0$ por defecto. | Si requieres variables irrestrictas (p. ej. utilidades o desviaciones), declara `lb=-GRB.INFINITY`. |
+        | **Variables binarias con decimales** | **Tipo de Variable no definido:** Se omitió el parámetro `vtype=GRB.BINARY` en `addVars()`. | Al usar `addVars()`, incluye siempre `vtype=GRB.BINARY`. De lo contrario, Gurobi las tratará como continuas ($0 \\le y \\le 1$). |
+        | **Objetivo minimiza al maximizar** | **Sentido por defecto:** `model.setObjective()` asume minimización si no se especifica el segundo argumento. | Para problemas de maximización, especifica siempre `GRB.MAXIMIZE` como segundo parámetro en `setObjective()`. |
+        | **Costo fijo cobrado sin producir** | **Relación Big-M desconectada:** Se agregó la variable $y_i$ a la función objetivo pero no en las restricciones. | Incluye la restricción de activación de capacidad $x_i \\le M \\cdot y_i$ para vincular la producción al costo fijo. |
+        | **Solución no activa binaria $y_i$ ($x_i > 0, y_i = 0$)** | **$M$ excesivamente grande ($>10^8$):** Genera imprecisión numérica (*ill-conditioning*). | Usa el menor $M$ físicamente válido (ej. capacidad real de planta) o reemplaza por `addGenConstrIndicator`. |
+        | **Cortar soluciones válidas** | **$M$ demasiado pequeño:** Se usó una constante $M$ menor al valor real que puede tomar $x_i$. | Calcula $M$ como la suma de las demandas totales o el límite superior real del sistema. |
+        """)
 
     st.markdown("---")
 
     # =========================================================================
-    # 3. SECCIÓN DE EJEMPLOS DE CÓDIGO POR TIPO DE PPL
+    # 3. EJEMPLOS DE CÓDIGO POR TIPO DE PPL
     # =========================================================================
     st.subheader("🚀 Ejemplos de Código por Tipo de PPL")
     st.write("Estructuras estándar de formulación e implementación en Python con Gurobi (`gurobipy`).")
