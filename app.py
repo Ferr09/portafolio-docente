@@ -52,7 +52,7 @@ def mostrar_landing_page():
         
         Bienvenidos a mi espacio docente. En este portal encontrarás el material didáctico,
         herramientas interactivas, guías de código y recursos desarrollados para los cursos
-        que imparto. Cualquier duda me pueden contactar al correo **fernando.rojas@ug.uchile.cl**, ¡estaré feliz de responderles!
+        que imparto. Cualquier duda me pueden contactar al correo **fernando.rojas@ug.uchile.cl** ¡estaré feliz de responderles!
         """)
         st.markdown("---")
 
