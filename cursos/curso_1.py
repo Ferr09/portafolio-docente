@@ -3,13 +3,9 @@ import streamlit as st
 st.title("📊 Modelamiento y Optimización - IN3171")
 st.markdown("Bienvenido al módulo interactivo de Modelamiento y Optimización.")
 
-tab1, tab2, tab3 = st.tabs(["📖 Programa y Lecturas", "💡 Cuestionarios y Práctica", "💻 Guías de Código"])
+tab1, tab2, tab3 = st.tabs(["💡 Cuestionarios y Práctica", "💻 Guías de Código", "📖 Programa y Lecturas"])
 
 with tab1:
-    st.subheader("Descarga de Apuntes")
-    st.write("Aquí puedes consultar y descargar la pauta, el syllabus y guías teóricas del curso.")
-
-with tab2:
     st.subheader("🧠 Entrenamiento rápido")
     st.write("""
     Esta sección permite entrenar tus habilidades para identificar patrones y formular problemas de optimización.
@@ -21,7 +17,7 @@ with tab2:
         
         st.link_button(
             label="🚀 Abrir Quiz Semana 1 (NotebookLM)", 
-            url="https://notebook.google.com/notebook/88dde8d7-ad8e-4a7e-bc20-57e61e5b08b6/artifact/5ce3f142-5d02-4d9e-bc9a-8a2026bf98ef?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_",
+            url="https://notebook.google.com/notebook/88dde8d7-ad8e-4a7e-bc20-57e61e5b08b6/artifact/f671bb13-2211-40eb-8e6d-0040cfcb3958?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_",
             use_container_width=True,
             type="primary"
         )
@@ -37,7 +33,8 @@ with tab2:
             type="secondary"
         )
 
-with tab3:
+
+with tab2:
     st.subheader("💻 Sintaxis y Formulario Computacional Gurobi (`gurobipy`)")
     st.write("Consulta el formulario de equivalencias matemáticas, diagnósticos de errores y estructuras de código por tipo de modelo.")
 
@@ -243,3 +240,7 @@ for t in T:
 
 model.optimize()
         """, language="python")
+
+with tab3:
+    st.subheader("Descarga de Apuntes")
+    st.write("Aquí puedes consultar y descargar la pauta, el syllabus y guías teóricas del curso.")
